@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import { Graph } from './graph';
 import './App.css';
 
-const canvasWidth = 1000;
-const canvasHeight = 800;
-const vertexRadius = 25;
+const canvasWidth = 700;
+const canvasHeight = 600;
+const vertexRadius = 17;
 
 /**
  * GraphView
@@ -48,35 +48,37 @@ class GraphView extends Component {
   createCanvas = () => {
     this.canvas = this.refs.canvas;
     this.ctx = this.canvas.getContext('2d');
-  }
+  };
 
   setListeners = () => {
     this.canvas.onmousedown = this.mouseDown;
     this.canvas.onmouseup = this.mouseUp;
     this.canvas.onmousemove = this.mouseMove;
-  }
+  };
 
   setBoundingBox = () => {
     this.boundingBox = this.canvas.getBoundingClientRect();
     this.offsetX = this.boundingBox.left;
     this.offsetY = this.boundingBox.top;
-  }
+  };
 
-  mouseDown = (e) => {
+  mouseDown = e => {
     e.preventDefault();
     let vertSelected = false;
 
-    const mouseX = +(e.clientX-this.offsetX); // Offsets are needed because events provide the xy position of the click for the entire window, not relative to the canvas
-    const mouseY = +(e.clientY-this.offsetY);
+    const mouseX = +(e.clientX - this.offsetX); // Offsets are needed because events provide the xy position of the click for the entire window, not relative to the canvas
+    const mouseY = +(e.clientY - this.offsetY);
 
     this.drag = null;
-    for(let vert of this.props.graph.vertexes) {
-      const dx = vert.pos.x-mouseX;
-      const dy = vert.pos.y-mouseY;
-      if((dx * dx) + (dy * dy) < (vertexRadius * vertexRadius)) { // Check if click was within the radius of any node
+    for (let vert of this.props.graph.vertexes) {
+      const dx = vert.pos.x - mouseX;
+      const dy = vert.pos.y - mouseY;
+      if (dx * dx + dy * dy < vertexRadius * vertexRadius) {
+        // Check if click was within the radius of any node
         this.drag = vert.value;
-        if(this.selected[0]) {
-          if(this.selected[0].group === vert.group) { // makes sure the 2nd selected node is reachable, aka part of the same group
+        if (this.selected[0]) {
+          if (this.selected[0].group === vert.group) {
+            // makes sure the 2nd selected node is reachable, aka part of the same group
             this.select(vert);
             this.updateCanvas();
             vertSelected = true;
@@ -89,22 +91,22 @@ class GraphView extends Component {
       }
     }
 
-    if(!vertSelected) {
+    if (!vertSelected) {
       console.log('not a vertex');
       this.clearSelected();
     }
     this.startX = mouseX;
     this.startY = mouseY;
-  }
+  };
 
-  select = (vert) => {
-    if(this.isSelected(vert)){
+  select = vert => {
+    if (this.isSelected(vert)) {
       this.selected = this.selected.filter(elem => elem.value !== vert.value);
-      if(this.selected.length === 0) {
+      if (this.selected.length === 0) {
         this.path = [];
       }
       this.updateCanvas();
-    } else if(this.selected.length >= 2) {
+    } else if (this.selected.length >= 2) {
       // this.clearSelected();
       this.selected.pop();
       this.selected.push({ value: vert.value, group: vert.group });
@@ -112,33 +114,34 @@ class GraphView extends Component {
     } else {
       this.selected.push({ value: vert.value, group: vert.group });
     }
-  }
+  };
 
   clearSelected = () => {
     this.selected = [];
     this.path = [];
     this.updateCanvas();
-  }
+  };
 
-  mouseUp = (e) => {
+  mouseUp = e => {
     e.preventDefault();
     this.drag = null;
-  }
+  };
 
-  mouseMove = (e) => {
-    if(this.drag) {
+  mouseMove = e => {
+    if (this.drag) {
       e.preventDefault();
 
-      const mouseX = +(e.clientX-this.offsetX);
-      const mouseY = +(e.clientY-this.offsetY);
+      const mouseX = +(e.clientX - this.offsetX);
+      const mouseY = +(e.clientY - this.offsetY);
       const dx = mouseX - this.startX;
       const dy = mouseY - this.startY;
 
-      for(let vert of this.props.graph.vertexes) {
-        if(this.drag === vert.value) {
+      for (let vert of this.props.graph.vertexes) {
+        if (this.drag === vert.value) {
           vert.pos.x += dx;
           vert.pos.y += dy;
-          if(dx > 10 || dy > 10) {  // threshold to deselect by dragging,  nudging the mouse slightly is common with single clicks
+          if (dx > 10 || dy > 10) {
+            // threshold to deselect by dragging,  nudging the mouse slightly is common with single clicks
             this.selected = this.selected.filter(elem => elem.value !== vert.value);
           }
         }
@@ -148,21 +151,21 @@ class GraphView extends Component {
       this.startX = mouseX;
       this.startY = mouseY;
     }
-  }
+  };
 
   clearCanvas = () => {
     this.ctx.fillStyle = 'white';
     this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  }
+  };
 
-  isSelected = (vert) => {
-    for(let selected of this.selected) {
-      if(selected.value === vert.value) {
+  isSelected = vert => {
+    for (let selected of this.selected) {
+      if (selected.value === vert.value) {
         return true;
       }
     }
     return false;
-  }
+  };
 
   /**
    * Render the canvas
@@ -175,10 +178,10 @@ class GraphView extends Component {
     // ------------ Graph -----------------------------
     this.props.graph.getConnectedComponents();
 
-    if(this.selected.length === 2) {
+    if (this.selected.length === 2) {
       let firstSelected, secondSelected;
-      for(let vertex of this.props.graph.vertexes) {
-        if(vertex.value === this.selected[0].value){
+      for (let vertex of this.props.graph.vertexes) {
+        if (vertex.value === this.selected[0].value) {
           firstSelected = vertex;
         } else if (vertex.value === this.selected[1].value) {
           secondSelected = vertex;
@@ -188,9 +191,10 @@ class GraphView extends Component {
       this.path = this.props.graph.dijkstra(firstSelected, secondSelected);
     }
 
-    ctx.lineWidth=2;
-    for(let vertex of this.props.graph.vertexes) {  // draw edges before nodes to asure theyre always below
-      for(let edge of vertex.edges) {
+    ctx.lineWidth = 2;
+    for (let vertex of this.props.graph.vertexes) {
+      // draw edges before nodes to asure theyre always below
+      for (let edge of vertex.edges) {
         const offX = (edge.destination.pos.x - vertex.pos.x) / 2;
         const offY = (edge.destination.pos.y - vertex.pos.y) / 2;
         ctx.beginPath();
@@ -211,7 +215,7 @@ class GraphView extends Component {
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(vertex.pos.x + offX, vertex.pos.y + offY, 9, 0, 2*Math.PI);  // edge weight circle
+        ctx.arc(vertex.pos.x + offX, vertex.pos.y + offY, 9, 0, 2 * Math.PI); // edge weight circle
         ctx.fillStyle = 'white';
         ctx.strokeStyle = 'grey';
         ctx.fill();
@@ -221,18 +225,19 @@ class GraphView extends Component {
         ctx.font = '10px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(edge.weight, vertex.pos.x + offX, vertex.pos.y + offY);  // edge weight label
+        ctx.fillText(edge.weight, vertex.pos.x + offX, vertex.pos.y + offY); // edge weight label
       }
     }
 
-    for(let vertex of this.props.graph.vertexes) { // drawing nodes
+    for (let vertex of this.props.graph.vertexes) {
+      // drawing nodes
       ctx.beginPath();
-      ctx.arc(vertex.pos.x, vertex.pos.y, vertexRadius, 0, 2*Math.PI);
+      ctx.arc(vertex.pos.x, vertex.pos.y, vertexRadius, 0, 2 * Math.PI);
       ctx.fillStyle = vertex.color;
       ctx.fill();
 
-      if(this.isSelected(vertex)) {
-        ctx.lineWidth=4;
+      if (this.isSelected(vertex)) {
+        ctx.lineWidth = 4;
         ctx.strokeStyle = 'black';
         ctx.stroke();
       }
@@ -289,7 +294,6 @@ class GraphView extends Component {
     // }
 
     // -----------------------------------------------
-
 
     // ------------ Space thing ---------------------------------------------
     // ctx.beginPath();
@@ -350,9 +354,7 @@ class GraphView extends Component {
     // ctx.closePath();
 
     // -------------------------------------------------------
-
   }
-
 
   /**
    * Render
@@ -360,16 +362,18 @@ class GraphView extends Component {
   render() {
     return (
       <React.Fragment>
-        <canvas ref="canvas" width={canvasWidth} height={canvasHeight}></canvas>
-        <button onClick={() => {
-          this.clearSelected();
-          this.props.regenerate();
-          }}>Regenerate</button>
+        <canvas ref="canvas" width={canvasWidth} height={canvasHeight} />
+        <button
+          onClick={() => {
+            this.clearSelected();
+            this.props.regenerate();
+          }}>
+          Regenerate
+        </button>
       </React.Fragment>
     );
   }
 }
-
 
 /**
  * App
@@ -389,16 +393,16 @@ class App extends Component {
     this.state.graph.refresh();
     this.randomize();
     this.forceUpdate();
-  }
+  };
 
   randomize = () => {
-    this.state.graph.randomize(6, 5, 160, 0.5);
-  }
+    this.state.graph.randomize(6, 5, 115, 0.5);
+  };
 
   render() {
     return (
       <div className="App">
-        <GraphView graph={this.state.graph} regenerate={this.regenerate}></GraphView>
+        <GraphView graph={this.state.graph} regenerate={this.regenerate} />
       </div>
     );
   }
